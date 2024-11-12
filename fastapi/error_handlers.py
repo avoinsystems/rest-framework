@@ -1,6 +1,8 @@
 # Copyright 2022 ACSONE SA/NV
 # License LGPL-3.0 or later (http://www.gnu.org/licenses/LGPL).
 
+import traceback
+
 from starlette import status
 from starlette.exceptions import HTTPException, WebSocketException
 from starlette.middleware.errors import ServerErrorMiddleware
@@ -10,6 +12,7 @@ from starlette.websockets import WebSocket
 from werkzeug.exceptions import HTTPException as WerkzeugHTTPException
 
 from odoo.exceptions import AccessDenied, AccessError, MissingError, UserError
+from odoo.tools import config
 
 from fastapi import Request
 from fastapi.encoders import jsonable_encoder
@@ -21,6 +24,9 @@ def convert_exception_to_status_body(exc: Exception) -> tuple[int, dict]:
     body = {}
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
     details = "Internal Server Error"
+    if config.get_misc("fastapi", "dev_mode"):
+        tb = "".join(traceback.format_exception(exc))
+        details = f"{details}\n{tb}"
 
     if isinstance(exc, WerkzeugHTTPException):
         status_code = exc.code
